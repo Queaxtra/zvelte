@@ -1,0 +1,61 @@
+{
+  "name": "@queaxtra/zvelte",
+  "version": "0.1.2",
+  "description": "A CLI tool to quickly scaffold SvelteKit projects with Shadcn UI, Tailwind CSS, and i18n support.",
+  "bin": {
+    "zvelte": "./bin/zvelte.js"
+  },
+  "keywords": [
+    "sveltekit",
+    "shadcn",
+    "cli",
+    "scaffold",
+    "template",
+    "command-line",
+    "tool",
+    "lightweight",
+    "fast",
+    "project-clone",
+    "clone",
+    "repository",
+    "git",
+    "automation",
+    "developer-tools",
+    "productivity",
+    "open-source",
+    "script",
+    "terminal",
+    "shell",
+    "quick-start",
+    "bootstrap",
+    "codebase",
+    "scaffolding",
+    "devops",
+    "workflow",
+    "instant-clone",
+    "repo-cloner",
+    "efficient",
+    "minimal",
+    "portable",
+    "cross-platform",
+    "easy-to-use",
+    "setup",
+    "project-setup",
+    "code-clone",
+    "rapid",
+    "utility",
+    "software-development",
+    "git-clone",
+    "code-download",
+    "project-management"
+  ],
+  "author": "Queaxtra <fatih@etik.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Queaxtra/zvelte.git"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
