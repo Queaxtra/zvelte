@@ -2,6 +2,32 @@
 
 Zvelte is a command-line interface (CLI) tool designed to streamline the creation of new SvelteKit projects. It provides a rapid way to scaffold projects by cloning a pre-configured, production-ready template that integrates Shadcn UI, Tailwind CSS, and i18n (internationalization) support, offering a robust and modern foundation for web application development.
 
+## Updates
+
+Zvelte has been updated with new features to improve your project setup experience:
+
+- **Create in Current Directory**: You can now initialize a project in your current working directory by using `.` as the project directory. This is useful for setting up a project in an existing folder.
+
+  ```bash
+  bunx @queaxtra/zvelte create .
+  ```
+
+- **Automatic Dependency Installation**: The `--install` flag allows you to automatically install project dependencies after creation. You can specify a package manager (`bun`, `pnpm`, `npm`, or `yarn`).
+
+  ```bash
+  # Install with bun
+  bunx @queaxtra/zvelte create my-project --install=bun
+
+  # Or let Zvelte prompt you to choose an installed package manager
+  bunx @queaxtra/zvelte create my-project --install
+  ```
+
+- **Help Command**: For a quick overview of commands and options, use the `-h` or `--help` flag.
+
+  ```bash
+  bunx @queaxtra/zvelte --help
+  ```
+
 ## Installation
 
 To use Zvelte, you don't need to install it globally. You can directly use `bunx` to run the CLI tool.
