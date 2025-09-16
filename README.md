@@ -4,29 +4,12 @@ Zvelte is a command-line interface (CLI) tool designed to streamline the creatio
 
 ## Updates
 
-Zvelte has been updated with new features to improve your project setup experience:
+Zvelte has been updated with new features to enhance project initialization and configuration:
 
-- **Create in Current Directory**: You can now initialize a project in your current working directory by using `.` as the project directory. This is useful for setting up a project in an existing folder.
-
-  ```bash
-  bunx @queaxtra/zvelte create .
-  ```
-
-- **Automatic Dependency Installation**: The `--install` flag allows you to automatically install project dependencies after creation. You can specify a package manager (`bun`, `pnpm`, `npm`, or `yarn`).
-
-  ```bash
-  # Install with bun
-  bunx @queaxtra/zvelte create my-project --install=bun
-
-  # Or let Zvelte prompt you to choose an installed package manager
-  bunx @queaxtra/zvelte create my-project --install
-  ```
-
-- **Help Command**: For a quick overview of commands and options, use the `-h` or `--help` flag.
-
-  ```bash
-  bunx @queaxtra/zvelte --help
-  ```
+- **Automatic package.json Updates**: Upon project creation, the `package.json` file is automatically updated with:
+  - `name`: Set to the project directory name.
+  - `description`: Cleared to an empty string.
+  - `version`: Set to "0.0.1".
 
 ## Installation
 

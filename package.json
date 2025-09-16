@@ -1,6 +1,6 @@
 {
   "name": "@queaxtra/zvelte",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "A CLI tool to quickly scaffold SvelteKit projects with Shadcn UI, Tailwind CSS, and i18n support.",
   "bin": {
     "zvelte": "./bin/zvelte.js"

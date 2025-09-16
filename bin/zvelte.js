@@ -7,13 +7,13 @@ import os from 'os';
 import prompts from 'prompts';
 
 const REPO_URL = 'https://github.com/Queaxtra/sveltekit-shadcn-template.git';
-const USAGE_MESSAGE = `Usage: bunx @queaxtra/zvelte create <project-directory> [options]\n\nDescription:\n  Creates a new SvelteKit project using a predefined template.\n\nArguments:\n  <project-directory>  The directory for the new project.\n                       Use '.' to create in the current directory.\n\nOptions:\n  --install[=<pm>]     Installs dependencies using the specified package manager (bun, pnpm, npm, yarn).\n                       If no package manager is specified, you will be prompted to choose.\n  -h, --help           Displays this help message.\n\nExample:\n  bunx @queaxtra/zvelte create my-awesome-project --install=bun
+const USAGE_MESSAGE = `Usage: bunx @queaxtra/zvelte <command> [options]\n\nCommands:\n  create <project-directory>  Creates a new SvelteKit project using a predefined template.\n\nArguments:\n  <project-directory>  The directory for the new project.\n                       Use '.' to use the current directory.\n\nOptions:\n  --install[=<pm>]     Installs dependencies using the specified package manager (bun, pnpm, npm, yarn).\n                       If no package manager is specified, you will be prompted to choose.\n  -h, --help           Displays this help message.\n\nExamples:\n  bunx @queaxtra/zvelte create my-awesome-project --install=bun
 `;
 
 /**
  * Checks if a command is available on the system.
  * @param {string} command - The command to check.
- * @returns {boolean}
+ * @returns {boolean} True if the command is installed, false otherwise.
  */
 function isCommandInstalled(command) {
   try {
@@ -27,7 +27,7 @@ function isCommandInstalled(command) {
 /**
  * Clones the repository to the specified path.
  * @param {string} projectPath - The path to clone the repository into.
- * @returns {Promise<void>}
+ * @returns {Promise<void>} Resolves when cloning is complete.
  */
 async function cloneRepository(projectPath) {
   return new Promise((resolve, reject) => {
@@ -51,7 +51,7 @@ async function cloneRepository(projectPath) {
  * Installs dependencies using the specified package manager.
  * @param {string} projectPath - The path to the project.
  * @param {string | null} packageManager - The package manager to use.
- * @returns {Promise<void>}
+ * @returns {Promise<void>} Resolves when installation is complete.
  */
 async function installDependencies(projectPath, packageManager) {
   if (!packageManager) {
@@ -60,12 +60,14 @@ async function installDependencies(projectPath, packageManager) {
 
   if (!isCommandInstalled(packageManager)) {
     console.warn(
-      `Warning: ${packageManager} is not installed. Skipping dependency installation.`
+      `\x1b[33mWarning: ${packageManager} is not installed. Skipping dependency installation.\x1b[0m`
     );
     return;
   }
 
-  console.log(`Installing dependencies with ${packageManager}...`);
+  console.log(
+    `\x1b[34mInstalling dependencies with ${packageManager}...\x1b[0m`
+  );
   return new Promise((resolve, reject) => {
     const installProcess = spawn(packageManager, ['install'], {
       cwd: projectPath,
@@ -74,7 +76,7 @@ async function installDependencies(projectPath, packageManager) {
 
     installProcess.on('close', (code) => {
       if (code === 0) {
-        console.log('\nDependencies installed successfully!');
+        console.log('\n\x1b[32mDependencies installed successfully!\x1b[0m');
         return resolve();
       }
       const error = new Error(
@@ -86,16 +88,97 @@ async function installDependencies(projectPath, packageManager) {
 }
 
 /**
+ * Validates the target directory for security.
+ * @param {string} targetDir - The target directory to validate.
+ * @returns {string} The resolved and validated path.
+ * @throws {Error} If the directory is invalid or path traversal is detected.
+ */
+function validateTargetDir(targetDir) {
+  if (!targetDir || typeof targetDir !== 'string') {
+    throw new Error('Invalid project directory provided.');
+  }
+
+  const resolvedPath = path.resolve(process.cwd(), targetDir);
+  const normalizedPath = path.normalize(resolvedPath);
+
+  if (normalizedPath !== resolvedPath) {
+    throw new Error('Path traversal detected in project directory.');
+  }
+
+  return resolvedPath;
+}
+
+/**
+ * Handles merging template into the current non-empty directory.
+ * @param {string} projectPath - The project path.
+ * @param {string} tempDir - The temporary directory for cloning.
+ * @returns {Promise<void>} Resolves when merge is complete.
+ * @throws {Error} If conflicting files are found.
+ */
+async function handleCurrentDirMerge(projectPath, tempDir) {
+  console.log(
+    '\x1b[34mCloning template repository into a temporary directory...\x1b[0m'
+  );
+  await cloneRepository(tempDir);
+  fs.rmSync(path.join(tempDir, '.git'), { recursive: true, force: true });
+
+  const templateFiles = fs.readdirSync(tempDir);
+  const projectFiles = fs.readdirSync(projectPath);
+  const conflictingFiles = templateFiles.filter((file) =>
+    projectFiles.includes(file)
+  );
+
+  if (conflictingFiles.length > 0) {
+    throw new Error(
+      `Aborting. Your directory contains files that would conflict with the template: ${conflictingFiles.join('\n')}`
+    );
+  }
+
+  console.log('\x1b[34mCopying project files...\x1b[0m');
+
+  for (const file of templateFiles) {
+    fs.cpSync(path.join(tempDir, file), path.join(projectPath, file), {
+      recursive: true
+    });
+  }
+
+  console.log(
+    '\x1b[32mProject successfully initialized in the current directory.\x1b[0m'
+  );
+}
+
+/**
+ * Handles creation of a new project in an empty directory.
+ * @param {string} projectPath - The project path.
+ * @returns {Promise<void>} Resolves when project is created.
+ */
+async function handleNewProjectCreation(projectPath) {
+  console.log(`\x1b[34mCreating new project in ${projectPath}...\x1b[0m`);
+  await cloneRepository(projectPath);
+  const gitPath = path.join(projectPath, '.git');
+
+  if (fs.existsSync(gitPath)) {
+    try {
+      fs.rmSync(gitPath, { recursive: true, force: true });
+      console.log('\x1b[32mRemoved .git directory.\x1b[0m');
+    } catch (error) {
+      console.error(
+        `\x1b[31mFailed to remove .git directory: ${error.message}\x1b[0m`
+      );
+      throw error;
+    }
+  }
+  console.log('\x1b[32mProject created successfully!\x1b[0m');
+}
+
+/**
  * Creates a new project by cloning a template.
- * This function handles three cases:
- * 1. Cloning into a new or empty directory.
- * 2. Cloning into the current non-empty directory (merging).
- * 3. Erroring if the target directory is non-empty and not the current directory.
  * @param {string} targetDir - The target directory for the project.
  * @returns {Promise<string>} The absolute path to the project.
+ * @throws {Error} If the target directory is invalid or conflicts exist.
  */
 async function createProject(targetDir) {
-  const projectPath = path.resolve(process.cwd(), targetDir);
+  const projectPath = validateTargetDir(targetDir);
   const isCurrentDir = targetDir === '.';
   const dirExists = fs.existsSync(projectPath);
   const isDirEmpty = dirExists
@@ -112,31 +195,7 @@ async function createProject(targetDir) {
     const tempDir = fs.mkdtempSync(path.join(os.tmpdir(), 'zvelte-'));
 
     try {
-      console.log('Cloning template repository into a temporary directory...');
-      await cloneRepository(tempDir);
-      fs.rmSync(path.join(tempDir, '.git'), { recursive: true, force: true });
-
-      const templateFiles = fs.readdirSync(tempDir);
-      const projectFiles = fs.readdirSync(projectPath);
-      const conflictingFiles = templateFiles.filter((file) =>
-        projectFiles.includes(file)
-      );
-
-      if (conflictingFiles.length > 0) {
-        throw new Error(
-          `Aborting. Your directory contains files that would conflict with the template: ${conflictingFiles.join('\n')}`
-        );
-      }
-
-      console.log('Copying project files...');
-
-      for (const file of templateFiles) {
-        fs.cpSync(path.join(tempDir, file), path.join(projectPath, file), {
-          recursive: true
-        });
-      }
-
-      console.log('Project successfully initialized in the current directory.');
+      await handleCurrentDirMerge(projectPath, tempDir);
     } finally {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }
@@ -144,21 +203,54 @@ async function createProject(targetDir) {
     return projectPath;
   }
 
-  console.log(`Creating new project in ${projectPath}...`);
-  await cloneRepository(projectPath);
-  const gitPath = path.join(projectPath, '.git');
-
-  if (fs.existsSync(gitPath)) {
-    try {
-      fs.rmSync(gitPath, { recursive: true, force: true });
-      console.log('Removed .git directory.');
-    } catch (error) {
-      console.error(`Failed to remove .git directory: ${error.message}`);
-      throw error;
-    }
-  }
-  console.log('Project created successfully!');
+  await handleNewProjectCreation(projectPath);
   return projectPath;
+}
+
+/**
+ * Updates the package.json file with project-specific details.
+ * @param {string} projectPath - The project path.
+ */
+function updatePackageJson(projectPath) {
+  const packageJsonPath = path.join(projectPath, 'package.json');
+  if (!fs.existsSync(packageJsonPath)) {
+    return;
+  }
+
+  const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
+  const projectName = path.basename(projectPath);
+  packageJson.name = projectName;
+  packageJson.description = '';
+  packageJson.version = '0.0.1';
+  fs.writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+}
+
+/**
+ * Prompts the user to select a package manager.
+ * @returns {Promise<string | null>} The selected package manager or null.
+ */
+async function promptPackageManager() {
+  const availablePms = ['bun', 'pnpm', 'npm', 'yarn'].filter(
+    isCommandInstalled
+  );
+
+  if (availablePms.length === 0) {
+    console.warn(
+      '\n\x1b[33mWarning: No package managers (bun, pnpm, npm, yarn) found. Skipping dependency installation.\x1b[0m'
+    );
+    return null;
+  }
+
+  const response = await prompts({
+    type: 'select',
+    name: 'pm',
+    message: 'Which package manager do you want to use for installation?',
+    choices: [
+      ...availablePms.map((pm) => ({ title: pm, value: pm })),
+      { title: 'None', value: null }
+    ]
+  });
+  return response.pm;
 }
 
 /**
@@ -173,51 +265,42 @@ async function main() {
       process.exit(0);
     }
 
-    const installArg = args.find((arg) => arg.startsWith('--install'));
-    args = args.filter((arg) => !arg.startsWith('--install'));
+    const command = args[0];
 
-    let packageManager = null;
-    if (installArg) {
-      const [, pm] = installArg.split('=');
-      packageManager = pm || 'prompt';
-    }
+    if (command === 'create') {
+      const installArg = args.find((arg) => arg.startsWith('--install'));
+      args = args.filter((arg) => !arg.startsWith('--install'));
 
-    if (args.length !== 2 || args[0] !== 'create' || !args[1]) {
-      console.log(USAGE_MESSAGE);
-      process.exit(0);
-    }
+      let packageManager = null;
+      if (installArg) {
+        const [, pm] = installArg.split('=');
+        packageManager = pm || 'prompt';
+      }
 
-    const targetDir = args[1];
-    const projectPath = await createProject(targetDir);
-
-    if (packageManager === 'prompt') {
-      const availablePms = ['bun', 'pnpm', 'npm', 'yarn'].filter(
-        isCommandInstalled
-      );
-
-      if (availablePms.length === 0) {
-        console.warn(
-          '\nWarning: No package managers (bun, pnpm, npm, yarn) found. Skipping dependency installation.'
-        );
+      if (args.length !== 2 || args[0] !== 'create' || !args[1]) {
+        console.log(USAGE_MESSAGE);
         process.exit(0);
       }
 
-      const response = await prompts({
-        type: 'select',
-        name: 'pm',
-        message: 'Which package manager do you want to use for installation?',
-        choices: [
-          ...availablePms.map((pm) => ({ title: pm, value: pm })),
-          { title: 'None', value: null }
-        ]
-      });
-      packageManager = response.pm;
+      const targetDir = args[1];
+      const projectPath = await createProject(targetDir);
+
+      updatePackageJson(projectPath);
+
+      if (packageManager === 'prompt') {
+        packageManager = await promptPackageManager();
+      }
+
+      await installDependencies(projectPath, packageManager);
+      process.exit(0);
     }
 
-    await installDependencies(projectPath, packageManager);
-    process.exit(0);
+    if (command !== 'create') {
+      console.log(USAGE_MESSAGE);
+      process.exit(0);
+    }
   } catch (error) {
-    console.error(`Error: ${error.message}`);
+    console.error(`\x1b[31mError: ${error.message}\x1b[0m`);
     process.exit(1);
   }
 }
